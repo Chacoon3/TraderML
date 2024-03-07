@@ -1,5 +1,6 @@
 from transformers import pipeline
 
+
 class FinNewsSentimentClassifier:
     def __init__(self, device = 0):
         print("Loading classifier...")
@@ -10,3 +11,7 @@ class FinNewsSentimentClassifier:
 
     def predict(self, news)->list:
         return self.__model(news, return_all_scores=True)
+    
+
+class FinNewsSummarizer:
+    pass
