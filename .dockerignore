@@ -1,0 +1,9 @@
+**/__pycache__/
+.git/
+*.pyc
+.vscode/
+credential
+*.csv
+**/notebook/
+.gitignore
+compose.yaml

@@ -1,0 +1,14 @@
+services:
+  app:
+    image: chaconn3/trader-ML:latest
+    restart: always
+    environment:
+      - APP_PORT=8000
+      - APP_WORKERS=1
+    ports:
+      - "8000:8000"
+    volumes:
+      - hfCache:~/.cache/huggingface/
+
+volumes:
+  hfCache:
