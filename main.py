@@ -1,10 +1,9 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from appErrors import badFormatError, unhandledError
-from ML.Models import SentimentClassifier, TextSummarizer
+from ML.Models import SentimentClassifier, TextSummarizer, BaseHFEndpoint
 
 
-# start up
 class AppConfig:
 
     def __init__(self, path="credential") -> None:
@@ -14,7 +13,7 @@ class AppConfig:
         config = {}
         with open(fileName, "r") as f:
             for line in f.readlines():
-                kvp = line.split("=")
+                kvp = line.strip().split("=")
                 config[kvp[0]] = kvp[1]
         return config
     
@@ -35,11 +34,16 @@ class AppConfig:
         return f"App Config:\ndevice: {self.device}\nserverless:{self.serverless}\ntoken:{specified}"
     
 
+# start up
 config = AppConfig()
 sentimentClassifier = SentimentClassifier(config.serverless, config.apiToken, config.device)
 summarizer = TextSummarizer(config.serverless, config.apiToken)
 app = FastAPI()
 print(config)
+modelTable = dict[str,BaseHFEndpoint](
+    sentiment=sentimentClassifier,
+    summary = summarizer
+)
 
 
 @app.middleware("http")
@@ -51,19 +55,11 @@ async def exceptionHandler(request: Request, call_next):
         return unhandledError(e)
 
 
-@app.post("/sentiment")
-async def sentimentAnalysis(request: Request):
-    data = await request.json()
-    if type(data) != list:
+@app.post("/inference/{taskType}")
+async def inference(request: Request, taskType:str):
+    dataArray = await request.json()
+    if type(dataArray) != list:
         return badFormatError()
-    preds = sentimentClassifier.predict(data)
-    return JSONResponse(preds, 200)
-
-
-@app.post("/summary")
-async def summary(request: Request):
-    data = await request.json()
-    if type(data) != list:
-        return badFormatError()
-    resp = summarizer.predict(data)
-    return JSONResponse(resp, 200)
+    model = modelTable[taskType]
+    predArray = model.predict(dataArray)
+    return JSONResponse(predArray, 200)
