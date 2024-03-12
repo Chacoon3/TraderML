@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from appErrors import badFormatError, unhandledError
+from appResponse import badFormatResponse, unhandledErrorResponse, dataResponse
 from ML.Models import SentimentClassifier, TextSummarizer, BaseHFEndpoint
 
 
@@ -52,14 +52,14 @@ async def exceptionHandler(request: Request, call_next):
         response = await call_next(request)
         return  response
     except Exception as e:
-        return unhandledError(e)
+        return unhandledErrorResponse(e)
 
 
 @app.post("/inference/{taskType}")
 async def inference(request: Request, taskType:str):
     dataArray = await request.json()
     if type(dataArray) != list:
-        return badFormatError()
+        return badFormatResponse()
     model = modelTable[taskType]
     predArray = model.predict(dataArray)
-    return JSONResponse(predArray, 200)
+    return dataResponse(predArray)
