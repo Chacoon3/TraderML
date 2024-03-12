@@ -1,5 +1,4 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 from appResponse import badFormatResponse, unhandledErrorResponse, dataResponse
 from ML.Models import SentimentClassifier, TextSummarizer, BaseHFEndpoint
 
