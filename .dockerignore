@@ -7,3 +7,6 @@ credential
 **/notebook/
 .gitignore
 compose.yaml
+credential
+README.md
+*.ipynb

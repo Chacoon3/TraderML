@@ -2,6 +2,8 @@ from transformers import pipeline
 import requests
 from .Exceptions import ModelException
 
+__name__ = "Models"
+
 
 _InferenceEndpoint = "https://api-inference.huggingface.co/models/"
 
