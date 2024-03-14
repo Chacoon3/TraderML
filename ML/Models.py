@@ -7,7 +7,7 @@ _InferenceEndpoint = "https://api-inference.huggingface.co/models/"
 
 
 def _useInputConverter(**kwargs):
-    if kwargs:
+    if not kwargs:
         def converter(dataList:list):
             return {
                 "inputs": dataList,
@@ -68,9 +68,9 @@ class SentimentClassifier(BaseHFEndpoint):
 
         modelId = "mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis"
         if serverless == True:
-            self.__predictor= _useServerlessPredictor(modelId, apiToken, _useInputConverter())
+            self.__predictor= _useServerlessPredictor(modelId, apiToken, _useInputConverter(truncation = True))
         else:
-            model = pipeline("text-classification", modelId, device=device)
+            model = pipeline("text-classification", modelId, device=device, truncation=True)
             if model is None:
                 raise ModelException(f"Failed to load {type(self)}.")
             self.__predictor = lambda dataList: model(dataList, return_all_scores = True)
@@ -89,14 +89,14 @@ class SentimentClassifier(BaseHFEndpoint):
 
 class TextSummarizer(BaseHFEndpoint):
 
-    def __init__(self, serverless: bool, apiToken = None) -> None:
+    def __init__(self, serverless: bool, apiToken = None, device="cpu") -> None:
         print(f"Loading {type(self)}...")
 
         modelId = "facebook/bart-large-cnn"
         if serverless == True:
-            self.__predictor = _useServerlessPredictor(modelId, apiToken, _useInputConverter(do_sample = False))   
+            self.__predictor = _useServerlessPredictor(modelId, apiToken, _useInputConverter(do_sample = False, truncation = True))   
         else:
-            model = pipeline("summarization", modelId)
+            model = pipeline("summarization", modelId, device=device, truncation=True)
             if model is None:
                 raise ModelException(f"Failed to load {type(self)}.")
             self.__predictor = lambda dataList: model(dataList, do_sample=False)

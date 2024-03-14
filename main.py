@@ -2,6 +2,15 @@ from fastapi import FastAPI, Request
 from appResponse import badFormatResponse, unhandledErrorResponse, dataResponse
 from ML.Models import SentimentClassifier, TextSummarizer, BaseHFEndpoint
 
+"""
+dev note:
+1. comparing inference  performance
+2. use a fallback patternn to handle raw news classification
+    - if the raw length is no greater than max length, analyze directly; otherwise do summarization first.\n
+        - summarization: split the articles into several paragraphs and summarize each paragraph.\n
+        - Join the paragraphs into one text and repeat the process till length is no greater than max length of the classifier
+"""
+
 
 class AppConfig:
 
