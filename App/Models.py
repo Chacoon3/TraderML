@@ -1,19 +1,54 @@
 from transformers import pipeline
+from tokenizers.pre_tokenizers import Whitespace
 import requests
 from .Exceptions import ModelException
+from openai import OpenAI
+import regex as re
+from .Config import config
 
 
 _InferenceEndpoint = "https://api-inference.huggingface.co/models/"
+whiteSpaceTokenizer = Whitespace()
+openaiClient = OpenAI(api_key = config.openaiToken)
 
+def _useTextualInputProcessor(**kwargs):
+    """
+    convert raw input into the format required by huggingface serverless inference endpoint
+    """
 
-def _useInputConverter(**kwargs):
+    def _removeHtmlElements(text):
+        # remove html elements
+        processed = re.sub(re.compile(r"<.*?>"), "", text)
+        # remove special chars
+        processed = re.sub(r"&amp;", "&", processed)
+        processed = re.sub(r"\s+|&#[0-9]+;|&nbsp;", " ", processed)
+        return processed
+
+    def _summarizeLengthy(dataList:list[str], maxLen:int = 512):
+        pretokenized = [whiteSpaceTokenizer.pre_tokenize(data) for data in dataList]
+        lengthyIndice = [i for i, p in enumerate(pretokenized) if len(p) > maxLen]
+        if len(lengthyIndice) > 0:
+            for index in lengthyIndice:
+                raw = dataList[index]
+                openaiClient.chat.completions.create(
+                    model="gpt-3.5-turbo-0125",
+                    messages=[
+                        {"role": "system", "content": "You are a financial analyst."},
+                        {"role": "user", "content": f"Summarize the following news. Limit your response within 500 words. \n{raw}"},
+                    ]
+                )
+        return dataList
+    
+
     if not kwargs:
         def converter(dataList:list):
+            dataList = [_removeHtmlElements(data) for data in dataList]
             return {
                 "inputs": dataList,
                 }
     else:
         def converter(dataList:list):
+            dataList = [_removeHtmlElements(data) for data in dataList]
             return {
                 "inputs": dataList,
                 "parameters": kwargs,
@@ -29,6 +64,10 @@ def _validateResponse(resp):
     
 
 def _useServerlessPredictor(modelId, apiToken, inputConverter = None):
+    """
+    wrapping of huggingface serverless inference endpoint
+    """
+
     headers = {
         "Authorization": f"Bearer {apiToken}"
     }
@@ -68,7 +107,7 @@ class SentimentClassifier(BaseHFEndpoint):
 
         modelId = "mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis"
         if serverless == True:
-            self.__predictor= _useServerlessPredictor(modelId, apiToken, _useInputConverter(truncation = True))
+            self.__predictor= _useServerlessPredictor(modelId, apiToken, _useTextualInputProcessor(truncation = True))
         else:
             model = pipeline("text-classification", modelId, device=device, truncation=True)
             if model is None:
@@ -94,7 +133,7 @@ class TextSummarizer(BaseHFEndpoint):
 
         modelId = "facebook/bart-large-cnn"
         if serverless == True:
-            self.__predictor = _useServerlessPredictor(modelId, apiToken, _useInputConverter(do_sample = False, truncation = True))   
+            self.__predictor = _useServerlessPredictor(modelId, apiToken, _useTextualInputProcessor(do_sample = False, truncation = True))   
         else:
             model = pipeline("summarization", modelId, device=device, truncation=True)
             if model is None:
