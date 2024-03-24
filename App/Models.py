@@ -116,11 +116,24 @@ class SentimentClassifier(BaseHFEndpoint):
 
         print(f"{type(self)} loaded.")
 
+    
+    def __convertToDict(self, pred:list[dict]):
+        res = dict[str, int](negative = 0, neutral = 0, positive = 0)
+        for p in pred:
+            if p['label'] == "negative":
+                res["negative"] = p['score']
+            elif p['label'] == "neutral":
+                res["neutral"] = p['score']
+            else:
+                res["positive"] = p['score']
+        return res
+        
+
 
     def predict(self, dataList: list)->list:
         preds = self.__predictor(dataList)
         res = [
-            {"negative": pred[0]['score'], "neutral": pred[1]['score'], "positive": pred[2]['score']}
+            self.__convertToDict(pred)
             for pred in preds
         ]
         return res
