@@ -2,14 +2,12 @@ from transformers import pipeline
 from tokenizers.pre_tokenizers import Whitespace
 import requests
 from .Exceptions import ModelException
-from openai import OpenAI
 import regex as re
-from .Config import config
+from sklearn.feature_extraction.text import TfidfTransformer
 
 
 _InferenceEndpoint = "https://api-inference.huggingface.co/models/"
 whiteSpaceTokenizer = Whitespace()
-openaiClient = OpenAI(api_key = config.openaiToken)
 
 def _useTextualInputProcessor(**kwargs):
     """
@@ -23,21 +21,6 @@ def _useTextualInputProcessor(**kwargs):
         processed = re.sub(r"&amp;", "&", processed)
         processed = re.sub(r"\s+|&#[0-9]+;|&nbsp;", " ", processed)
         return processed
-
-    def _summarizeLengthy(dataList:list[str], maxLen:int = 512):
-        pretokenized = [whiteSpaceTokenizer.pre_tokenize(data) for data in dataList]
-        lengthyIndice = [i for i, p in enumerate(pretokenized) if len(p) > maxLen]
-        if len(lengthyIndice) > 0:
-            for index in lengthyIndice:
-                raw = dataList[index]
-                openaiClient.chat.completions.create(
-                    model="gpt-3.5-turbo-0125",
-                    messages=[
-                        {"role": "system", "content": "You are a financial analyst."},
-                        {"role": "user", "content": f"Summarize the following news. Limit your response within 500 words. \n{raw}"},
-                    ]
-                )
-        return dataList
     
 
     if not kwargs:
@@ -159,4 +142,16 @@ class TextSummarizer(BaseHFEndpoint):
     def predict(self, dataList: list)->list:
         preds = self.__predictor(dataList)
         res = [pred['summary_text'] for pred in preds]
+        return res
+    
+
+class TfIdfPredictor(BaseHFEndpoint):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    
+    def predict(self, dataList: list[list])->list:
+        transformer = TfidfTransformer()
+        res = transformer.fit_transform(dataList)
         return res

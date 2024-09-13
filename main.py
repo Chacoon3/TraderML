@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from App.Response import badFormatResponse, unhandledErrorResponse, dataResponse
-from App.Models import SentimentClassifier, TextSummarizer, BaseHFEndpoint
+from App.Models import SentimentClassifier, TextSummarizer, TfIdfPredictor, BaseHFEndpoint
 from App.Config import config
 
 """
@@ -16,13 +16,15 @@ dev note:
     
 
 # start up
-sentimentClassifier = SentimentClassifier(config.serverless, config.hfToken, config.device)
-summarizer = TextSummarizer(config.serverless, config.hfToken, config.device)
+#sentimentClassifier = SentimentClassifier(config.serverless, config.hfToken, config.device)
+tfidf = TfIdfPredictor()
+# summarizer = TextSummarizer(config.serverless, config.hfToken, config.device)
 app = FastAPI()
 print(config)
 modelTable = dict[str,BaseHFEndpoint](
-    sentiment=sentimentClassifier,
-    summary = summarizer
+    #sentiment=sentimentClassifier,
+    #summary = summarizer,
+    tfidf = tfidf
 )
 
 
