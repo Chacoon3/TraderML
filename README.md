@@ -1,2 +1,5 @@
+#### A Web Service for Text Classification
 
-- Estimated runtime memory minimal: 4G
+- This is a web app that exposes a set of interefaces related to text classification and text summarization.
+- The inference service can be configured to be either serverless or local. In latter case the remote HuggingFace model has to be downloaded to local machine.
+- Estimated runtime minimal memory requirement when using local inference service: 4G
